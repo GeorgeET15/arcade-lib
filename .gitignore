@@ -1,0 +1,16 @@
+# Build artifacts
+*.o
+*.exe
+*.out
+test
+game
+
+# Temporary files
+*.tmp
+*.png.tmp
+/tmp/arcade_*
+
+# Editor files
+.vscode/
+.idea/
+*.swp
