@@ -1,6 +1,6 @@
-# Contributing to Arcade Library
+# Contributing to ARCADE: Awesome Rendering Control And Dynamics Engine
 
-Thank you for your interest in contributing to Arcade Library! We welcome contributions to improve this lightweight C library for retro 2D game development.
+Thank you for your interest in contributing to ARCADE (Awesome Rendering Control And Dynamics Engine)! We welcome contributions to improve this lightweight C library for retro 2D game development.
 
 ## How to Contribute
 
@@ -16,47 +16,60 @@ Thank you for your interest in contributing to Arcade Library! We welcome contri
    git checkout -b feature/your-feature
    ```
 4. **Make Changes**:
-   - Add features, fix bugs, or improve documentation.
-   - Follow the coding style in `arcade.c` (e.g., 4-space indentation, clear comments).
+   - Modify `include/arcade.h` (declarations) or `src/arcade.c` (implementation).
+   - Follow the coding style (4-space indentation, clear comments).
 5. **Test Your Changes**:
-   - Write a test program using `arcade.h` and compile:
+   - Write a test program:
+     ```c
+     #include "include/arcade.h"
+     int main() {
+         arcade_init(800, 600, "Test", 0x000000);
+         while (arcade_running() && arcade_update()) {
+             arcade_sleep(16);
+         }
+         arcade_quit();
+         return 0;
+     }
+     ```
+   - Compile:
      ```bash
      gcc -o test test.c src/arcade.c -Iinclude -lgdi32 -lwinmm # Windows
      gcc -o test test.c src/arcade.c -Iinclude -lX11 -lm # Linux
-     ./test
      ```
-6. **Commit and Push**:
+6. **Update Release `arcade.h`** (if needed):
+   - If changes affect `arcade.h` or `arcade.c`, update the self-contained `arcade.h` for releases.
+   - Copy `include/arcade.h` and `src/arcade.c` into the release `arcade.h`’s `#ifdef ARCADE_IMPLEMENTATION` block.
+7. **Commit and Push**:
    ```bash
    git add .
    git commit -m "Add your-feature: description"
    git push origin feature/your-feature
    ```
-7. **Submit a Pull Request**:
-   - Go to the [arcade-lib repo](https://github.com/GeorgeET15/arcade-lib).
-   - Create a pull request from your branch.
-   - Describe your changes and link to any related issues.
+8. **Submit a Pull Request**:
+   - Go to [arcade-lib](https://github.com/GeorgeET15/arcade-lib).
+   - Create a pull request and describe your changes.
 
 ## Contribution Ideas
 
-- Optimize rendering (`arcade_render_scene`) for large sprite groups.
+- Optimize rendering (`arcade_render_scene`).
 - Support additional image formats in `arcade_create_image_sprite`.
-- Improve audio handling (e.g., preloading WAV files on Windows).
-- Enhance `arcade.h` documentation with detailed comments.
-- Add support for new platforms or input devices.
+- Improve audio handling (e.g., preloading WAV files).
+- Enhance documentation in `arcade.h` or `README.md`.
+- Add platform or input device support.
 
 ## Reporting Issues
 
 - Open an issue on [GitHub Issues](https://github.com/GeorgeET15/arcade-lib/issues).
-- Include details: OS, compiler, steps to reproduce, and expected behavior.
+- Include OS, compiler, steps to reproduce, and expected behavior.
 
 ## Code Style
 
 - Use 4-space indentation.
-- Add comments for clarity, especially for platform-specific code.
-- Keep functions concise and focused.
+- Add clear comments, especially for platform-specific code.
+- Keep functions concise.
 
 ## Contact
 
 Questions? Email GeorgeET15 at georgeemmanuelthomas@gmail.com or open an issue.
 
-Let’s make Arcade Library better together! 🎮
+Let’s make ARCADE better together! 🎮
