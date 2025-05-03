@@ -53,7 +53,7 @@ The [Arcade CLI](https://github.com/GeorgeET15/arcade-cli) is a command-line too
 3. **Replace Assets**:
    - Replace `assets/player.png` and `assets/sound.wav` with valid files.
 
-See the [Arcade CLI documentation](https://github.com/GeorgeET15/arcade-lib) for details.
+See the [Arcade CLI documentation](https://github.com/GeorgeET15/arcade-cli) for details.
 
 ### Manual Setup
 
