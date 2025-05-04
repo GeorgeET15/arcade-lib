@@ -9,13 +9,41 @@ Visit the [ARCADE website](https://arcade-lib.dev) for examples, tutorials, and 
 
 ## Features
 
-- Window management with.
+- Window management.
 - Sprite rendering: color-based, image-based, and animated sprites.
 - Keyboard input with continuous and single-press detection.
 - AABB collision detection for sprites.
-- WAV audio playback with.
+- WAV and MP3 audio playback.
 - Text rendering with fixed fonts and blinking effects.
 - Image manipulation (flip, rotate).
+
+## Getting Started
+
+1. **Install the Arcade CLI** (recommended):
+
+   ```bash
+   npm install -g arcade-cli
+   ```
+
+   Place a `background_music.mp3` file in the CLI’s `./assets/` directory (e.g., `./node_modules/arcade-cli/assets/`).
+
+2. **Initialize a Project**:
+
+   - Full project with a game demo:
+     ```bash
+     arcade init my-game
+     cd my-game
+     make
+     make run
+     ```
+   - Blank project (library headers only):
+     ```bash
+     arcade init my-game -b
+     ```
+
+3. **Explore the Demo** (full project):
+   - `main.c` includes a red square movable with arrow keys, a start screen, background music (`assets/background_music.mp3`), and detailed comments.
+   - Modify `main.c` or add assets to build your game. See the [ARCADE Wiki](https://github.com/GeorgeET15/arcade-lib/wiki).
 
 ## Installation
 
@@ -30,10 +58,11 @@ Visit the [ARCADE website](https://arcade-lib.dev) for examples, tutorials, and 
   - `aplay` for audio (install with `sudo apt install alsa-utils`).
 - **STB Libraries**:
   - Download `stb_image.h`, `stb_image_write.h`, and `stb_image_resize2.h` from [STB](https://github.com/nothings/stb).
+  - Autmoatically installed if using the cli tool.
 
 ### Setup with Arcade CLI (Recommended)
 
-The [Arcade CLI](https://github.com/GeorgeET15/arcade-cli) is a command-line tool that automates project setup, downloading `arcade.h`, STB headers, and generating a starter project with a `Makefile` and example code.
+The [Arcade CLI](https://github.com/GeorgeET15/arcade-cli) automates project setup, downloading `arcade.h`, STB headers, and generating a beginner-friendly project with a `Makefile`, `.gitignore`, and a `main.c` demo featuring sprite movement, text, and background music.
 
 1. **Install Arcade CLI**:
 
@@ -41,19 +70,31 @@ The [Arcade CLI](https://github.com/GeorgeET15/arcade-cli) is a command-line too
    npm install -g arcade-cli
    ```
 
-2. **Initialize a Project**:
+2. **Place Static Asset**:
 
-   ```bash
-   arcade init my-game
-   cd my-game
-   make
-   make run
-   ```
+   - Create an `assets/` directory in the CLI’s installation directory (e.g., `./node_modules/arcade-cli/assets/`).
+   - Add a valid `background_music.mp3` file (e.g., from [freesound.org](https://freesound.org)).
 
-3. **Replace Assets**:
-   - Replace `assets/player.png` and `assets/sound.wav` with valid files.
+3. **Initialize a Project**:
 
-See the [Arcade CLI documentation](https://github.com/GeorgeET15/arcade-cli) for details.
+   - Full project:
+     ```bash
+     arcade init my-game
+     cd my-game
+     make
+     make run
+     ```
+   - Blank project:
+     ```bash
+     arcade init my-lib -b
+     cd my-lib
+     # Add your own source files and Makefile
+     ```
+
+4. **Explore `main.c`** (full project):
+   - Features a red square (color-based sprite) movable with arrow keys, a start screen, and looping background music (`assets/background_music.mp3`).
+   - Includes detailed comments for beginners.
+   - See the [Arcade CLI documentation](https://github.com/GeorgeET15/arcade-cli) for details.
 
 ### Manual Setup
 
@@ -63,7 +104,7 @@ See the [Arcade CLI documentation](https://github.com/GeorgeET15/arcade-cli) for
 
 2. **Create `arcade/` Folder**:
 
-   - In your game project folder (e.g., `my-game/`), create a subfolder named `arcade/`:
+   - In your project folder (e.g., `my-game/`), create a subfolder named `arcade/`:
      ```bash
      mkdir my-game/arcade
      ```
@@ -79,32 +120,67 @@ See the [Arcade CLI documentation](https://github.com/GeorgeET15/arcade-cli) for
 
 4. **Use in Code**:
 
-   - In your game source file (e.g., `game.c`), define `ARCADE_IMPLEMENTATION` and include `arcade/arcade.h`:
+   - In your source file (e.g., `game.c`), define `ARCADE_IMPLEMENTATION` and include `arcade/arcade.h`:
 
      ```c
-     #define ARCADE_IMPLEMENTATION
-     #include "arcade/arcade.h"
+     // game.c: A simple ARCADE game moving a red square with left/right keys
+      #define ARCADE_IMPLEMENTATION
+      #include "arcade/arcade.h"
+      #include <stdio.h>
 
-     int main() {
-         arcade_init(800, 600, "My Game", 0x000000);
-         ArcadeImageSprite player = arcade_create_image_sprite(100.0f, 100.0f, 50.0f, 50.0f, "player.png");
+      int main() {
+         // Initialize window (800x600, black background)
+         if (arcade_init(800, 600, "My Game", 0x000000) != 0) {
+            return 1;
+         }
+
+         // Initialize player sprite (50x50 red square at center)
+         ArcadeSprite player = {
+            .x = 400.0f, .y = 300.0f, // Center (800/2, 600/2)
+            .width = 50.0f, .height = 50.0f,
+            .vx = 0.0f, .vy = 0.0f,
+            .color = 0xFF0000, // Red
+            .active = 1
+         };
+
+         // Initialize sprite group for rendering
          SpriteGroup group;
          arcade_init_group(&group, 1);
+
+         // Main game loop
          while (arcade_running() && arcade_update()) {
-             if (arcade_key_pressed(a_right)) player.vx = 5.0f;
-             else if (arcade_key_pressed(a_left)) player.vx = -5.0f;
-             else player.vx = 0.0f;
-             arcade_move_image_sprite(&player, 0.1f, 600);
-             arcade_add_sprite_to_group(&group, (ArcadeAnySprite){.image_sprite = player}, SPRITE_IMAGE);
-             arcade_render_group(&group);
-             arcade_render_text("Move: Left/Right", 10.0f, 10.0f, 0xFFFFFF);
-             arcade_sleep(16); // ~60 FPS
+            // Optional: Play background music (requires assets/background_music.mp3)
+            arcade_play_sound("assets/background_music.mp3");
+
+            // Reset sprite group each frame
+            group.count = 0;
+
+            // Handle input: move left/right
+            player.vx = 0.0f;
+            if (arcade_key_pressed(a_right) == 2) player.vx = 5.0f;
+            if (arcade_key_pressed(a_left) == 2) player.vx = -5.0f;
+
+            // Update player position
+            player.x += player.vx;
+            if (player.x < 0) player.x = 0;
+            if (player.x > 750) player.x = 750; // 800 - 50
+
+            // Add player to render group
+            arcade_add_sprite_to_group(&group, (ArcadeAnySprite){.sprite = player}, SPRITE_COLOR);
+
+            // Render sprites and text
+            arcade_render_group(&group);
+            arcade_render_text("Move: Left/Right", 10.0f, 10.0f, 0xFFFFFF);
+
+            // Maintain ~60 FPS
+            arcade_sleep(16);
          }
-         arcade_free_image_sprite(&player);
+
+         // Clean up
          arcade_free_group(&group);
          arcade_quit();
          return 0;
-     }
+      }
      ```
 
 5. **Compile**:
@@ -116,7 +192,7 @@ See the [Arcade CLI documentation](https://github.com/GeorgeET15/arcade-cli) for
 
 ## Folder Structure Example
 
-After setup (manual or via CLI), your project folder should look like:
+### Manual Setup
 
 ```
 my-game/
@@ -128,7 +204,7 @@ my-game/
     ├── stb_image_resize2.h
 ```
 
-If using image-based sprites or audio, add an `assets/` folder:
+If using audio, add an `assets/` folder:
 
 ```
 my-game/
@@ -139,11 +215,10 @@ my-game/
 │   ├── stb_image_write.h
 │   ├── stb_image_resize2.h
 └── assets/
-    ├── player.png
-    ├── sound.wav
+    ├── background_music.mp3
 ```
 
-With the Arcade CLI, you also get:
+### Arcade CLI (Full Project)
 
 ```
 my-game/
@@ -156,8 +231,18 @@ my-game/
 │   ├── stb_image_write.h
 │   ├── stb_image_resize2.h
 └── assets/
-    ├── player.png
-    ├── sound.wav
+    ├── background_music.mp3
+```
+
+### Arcade CLI (Blank Project, `-b`)
+
+```
+my-lib/
+├── arcade/
+│   ├── arcade.h
+│   ├── stb_image.h
+│   ├── stb_image_write.h
+│   ├── stb_image_resize2.h
 ```
 
 ## Dependencies
@@ -166,7 +251,7 @@ my-game/
 - **STB Libraries**: `stb_image.h`, `stb_image_write.h`, `stb_image_resize2.h` (place in `arcade/`).
 - **Windows**: `gdi32`, `winmm` (included with MinGW).
 - **Linux**: `libX11`, `libm`, `aplay`.
-- **Arcade CLI (optional)**: Node.js and `arcade-cli` (via npm).
+- **Arcade CLI (optional)**: Node.js, `arcade-cli` (via npm), and a `background_music.mp3` in the CLI’s `./assets/`.
 
 ## Giving Credit
 
