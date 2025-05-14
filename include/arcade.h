@@ -78,6 +78,11 @@
 #define ARCADE_H
 
 #include <stdint.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdio.h>
 
 /* =========================================================================
  * Enumerations
@@ -114,18 +119,91 @@ enum
  * - Use arcade_key_pressed for continuous press detection (e.g., holding a key).
  * - Use arcade_key_pressed_once for single-press events (e.g., triggering an action).
  */
-#define a_up 0xff52    /* Up arrow key */
-#define a_down 0xff54  /* Down arrow key */
-#define a_left 0xff51  /* Left arrow key */
-#define a_right 0xff53 /* Right arrow key */
-#define a_w 0x0077     /* W key */
-#define a_a 0x0061     /* A key */
-#define a_s 0x0073     /* S key */
-#define a_d 0x0064     /* D key */
-#define a_r 0x0072     /* R key */
-#define a_p 0x0070     /* P key */
-#define a_space 0x0020 /* Spacebar */
-#define a_esc 0xff1b   /* Escape key */
+#define a_a 0x0061 /* A key */
+#define a_b 0x0062 /* B key */
+#define a_c 0x0063 /* C key */
+#define a_d 0x0064 /* D key */
+#define a_e 0x0065 /* E key */
+#define a_f 0x0066 /* F key */
+#define a_g 0x0067 /* G key */
+#define a_h 0x0068 /* H key */
+#define a_i 0x0069 /* I key */
+#define a_j 0x006a /* J key */
+#define a_k 0x006b /* K key */
+#define a_l 0x006c /* L key */
+#define a_m 0x006d /* M key */
+#define a_n 0x006e /* N key */
+#define a_o 0x006f /* O key */
+#define a_p 0x0070 /* P key */
+#define a_q 0x0071 /* Q key */
+#define a_r 0x0072 /* R key */
+#define a_s 0x0073 /* S key */
+#define a_t 0x0074 /* T key */
+#define a_u 0x0075 /* U key */
+#define a_v 0x0076 /* V key */
+#define a_w 0x0077 /* W key */
+#define a_x 0x0078 /* X key */
+#define a_y 0x0079 /* Y key */
+#define a_z 0x007a /* Z key */
+
+#define a_0 0x0030 /* 0 key */
+#define a_1 0x0031 /* 1 key */
+#define a_2 0x0032 /* 2 key */
+#define a_3 0x0033 /* 3 key */
+#define a_4 0x0034 /* 4 key */
+#define a_5 0x0035 /* 5 key */
+#define a_6 0x0036 /* 6 key */
+#define a_7 0x0037 /* 7 key */
+#define a_8 0x0038 /* 8 key */
+#define a_9 0x0039 /* 9 key */
+
+#define a_space 0x0020      /* Spacebar */
+#define a_excl 0x0021       /* ! */
+#define a_quot 0x0022       /* " */
+#define a_hash 0x0023       /* # */
+#define a_dollar 0x0024     /* $ */
+#define a_percent 0x0025    /* % */
+#define a_amp 0x0026        /* & */
+#define a_squote 0x0027     /* ' */
+#define a_lparen 0x0028     /* ( */
+#define a_rparen 0x0029     /* ) */
+#define a_asterisk 0x002a   /* * */
+#define a_plus 0x002b       /* + */
+#define a_comma 0x002c      /* , */
+#define a_minus 0x002d      /* - */
+#define a_dot 0x002e        /* . */
+#define a_slash 0x002f      /* / */
+#define a_colon 0x003a      /* : */
+#define a_semicolon 0x003b  /* ; */
+#define a_less 0x003c       /* < */
+#define a_equal 0x003d      /* = */
+#define a_greater 0x003e    /* > */
+#define a_question 0x003f   /* ? */
+#define a_at 0x0040         /* @ */
+#define a_lbracket 0x005b   /* [ */
+#define a_backslash 0x005c  /* \ */
+#define a_rbracket 0x005d   /* ] */
+#define a_caret 0x005e      /* ^ */
+#define a_underscore 0x005f /* _ */
+#define a_backtick 0x0060   /* ` */
+#define a_lbrace 0x007b     /* { */
+#define a_pipe 0x007c       /* | */
+#define a_rbrace 0x007d     /* } */
+#define a_tilde 0x007e      /* ~ */
+
+#define a_up 0xff52    /* Up arrow */
+#define a_down 0xff54  /* Down arrow */
+#define a_left 0xff51  /* Left arrow */
+#define a_right 0xff53 /* Right arrow */
+
+#define a_enter 0xff0d     /* Enter/Return */
+#define a_esc 0xff1b       /* Escape */
+#define a_shift 0xffe1     /* Shift (Left Shift) */
+#define a_ctrl 0xffe3      /* Control (Left Ctrl) */
+#define a_alt 0xffe9       /* Alt (Left Alt) */
+#define a_tab 0xff09       /* Tab */
+#define a_capslock 0xffe5  /* Caps Lock */
+#define a_backspace 0xff08 /* Backspace */
 
 /* =========================================================================
  * Data Structures
@@ -357,6 +435,25 @@ void arcade_set_running(int value);
  * - Common values: 16ms (~60 FPS), 33ms (~30 FPS).
  */
 void arcade_sleep(unsigned int milliseconds);
+
+/*
+ * arcade_delta_time: Calculates the time elapsed since the last frame in seconds.
+ * Used to scale movement and updates for frame-rate-independent gameplay.
+ * Parameters: None.
+ * Returns: Time difference in seconds (float) since the last call.
+ * Example:
+ *   while (arcade_running() && arcade_update()) {
+ *       float dt = arcade_delta_time();
+ *       player.x += player.vx * dt * 60.0f; // Normalize to 60 FPS
+ *       arcade_render_group(&group);
+ *   }
+ * Notes:
+ * - Uses QueryPerformanceCounter (Windows) or clock_gettime (Linux).
+ * - Clamps delta time to 0.1s max to prevent large jumps during lag.
+ * - First call returns 0.0f to avoid initial movement spikes.
+ * - Typical values: ~0.0167s (60 FPS), ~0.0333s (30 FPS).
+ */
+float arcade_delta_time(void);
 
 /* =========================================================================
  * Input Handling
@@ -779,6 +876,28 @@ void arcade_free_group(SpriteGroup *group);
  * - Frequent calls may cause delays on slow systems; consider preloading for Windows.
  */
 int arcade_play_sound(const char *audio_file_path);
+
+/*
+ * arcade_stop_sound: Stops any currently playing WAV audio.
+ * Immediately halts sound playback started by arcade_play_sound.
+ *
+ * Returns:
+ * - 0 on success.
+ * - Non-zero on failure (e.g., no sound playing or command fails).
+ *
+ * Example:
+ *   if (arcade_key_pressed_once(a_s)) {
+ *       arcade_stop_sound();
+ *   }
+ *
+ * Notes:
+ * - Windows: Uses PlaySound(NULL, NULL, 0) to stop current async playback.
+ * - Linux: Uses pkill to terminate background `aplay` processes.
+ *   This assumes that only arcade_play_sound uses `aplay -q`.
+ * - This function stops all active sounds immediately. It does not pause.
+ * - If multiple arcade_play_sound calls were triggered quickly, this will halt them all.
+ */
+int arcade_stop_sound(void);
 
 /* =========================================================================
  * Image Manipulation

@@ -1,8 +1,10 @@
-#include "arcade.h"
+#ifdef ARCADE_IMPLEMENTATION
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -27,36 +29,36 @@
 #ifdef _WIN32
 typedef struct
 {
-    HWND hwnd;         /* Window handle */
-    HDC hdc;           /* Device context */
-    HBITMAP hbitmap;   /* Bitmap for double buffering */
-    uint32_t *pixels;  /* Pixel buffer for rendering */
-    int width, height; /* Window dimensions */
-    uint32_t bg_color; /* Background color */
-    HFONT hfont;       /* Font for text rendering */
-    int running;       /* Game running state */
+    HWND hwnd;         /* Window handle for the game window */
+    HDC hdc;           /* Device context for rendering operations */
+    HBITMAP hbitmap;   /* Bitmap for double buffering to reduce flicker */
+    uint32_t *pixels;  /* Pixel buffer for storing rendered frame data */
+    int width, height; /* Window dimensions in pixels */
+    uint32_t bg_color; /* Background color (0xRRGGBB) for clearing the screen */
+    HFONT hfont;       /* Font handle for text rendering (Courier New) */
+    int running;       /* Game running state (1 = running, 0 = stopped) */
 } ArcadeState;
 #else
 typedef struct
 {
-    Display *display;  /* X11 display connection */
-    Window window;     /* Game window */
-    int screen;        /* Default screen */
-    uint32_t *pixels;  /* Pixel buffer for rendering */
-    int width, height; /* Window dimensions */
-    Atom wm_delete;    /* Window close event atom */
-    XImage *image;     /* X11 image for rendering */
-    GC gc;             /* Graphics context */
-    uint32_t bg_color; /* Background color */
-    XFontStruct *font; /* Font for text rendering */
-    int running;       /* Game running state */
+    Display *display;  /* X11 display connection for communicating with the X server */
+    Window window;     /* Game window identifier */
+    int screen;        /* Default screen number for the display */
+    uint32_t *pixels;  /* Pixel buffer for storing rendered frame data */
+    int width, height; /* Window dimensions in pixels */
+    Atom wm_delete;    /* Atom for handling window close events */
+    XImage *image;     /* X11 image for rendering pixel data to the window */
+    GC gc;             /* Graphics context for drawing operations */
+    uint32_t bg_color; /* Background color (0xRRGGBB) for clearing the screen */
+    XFontStruct *font; /* Font structure for text rendering (9x15 font) */
+    int running;       /* Game running state (1 = running, 0 = stopped) */
 } ArcadeState;
 #endif
 
-static ArcadeState state = {0};
-static int key_states[256] = {0};      /* Key states (0 = up, 1 = down) */
-static int last_key_states[256] = {0}; /* Previous key states for single-press detection */
-static int global_frame_counter = 0;   /* Frame counter for animations and blinking */
+static ArcadeState state = {0};        /* Global state for the arcade environment */
+static int key_states[256] = {0};      /* Current key states (0 = up, 1 = down) for input tracking */
+static int last_key_states[256] = {0}; /* Previous key states for detecting single-press events */
+static int global_frame_counter = 0;   /* Global frame counter for animations and blinking effects */
 
 /* =========================================================================
  * Platform-Specific Input Handling (Windows Only)
@@ -64,36 +66,120 @@ static int global_frame_counter = 0;   /* Frame counter for animations and blink
 #ifdef _WIN32
 static int arcade_to_vk(unsigned int arcade_key)
 {
+    /* Maps arcade key codes to Windows virtual key codes for input handling */
     switch (arcade_key)
     {
+    // Arrow keys
     case a_up:
-        return VK_UP;
+        return VK_UP; /* Maps to Windows virtual key for up arrow */
     case a_down:
-        return VK_DOWN;
+        return VK_DOWN; /* Maps to Windows virtual key for down arrow */
     case a_left:
-        return VK_LEFT;
+        return VK_LEFT; /* Maps to Windows virtual key for left arrow */
     case a_right:
-        return VK_RIGHT;
-    case a_w:
-        return 'W';
+        return VK_RIGHT; /* Maps to Windows virtual key for right arrow */
+
+    // Letters
     case a_a:
         return 'A';
-    case a_s:
-        return 'S';
+    case a_b:
+        return 'B';
+    case a_c:
+        return 'C';
     case a_d:
         return 'D';
-    case a_r:
-        return 'R';
+    case a_e:
+        return 'E';
+    case a_f:
+        return 'F';
+    case a_g:
+        return 'G';
+    case a_h:
+        return 'H';
+    case a_i:
+        return 'I';
+    case a_j:
+        return 'J';
+    case a_k:
+        return 'K';
+    case a_l:
+        return 'L';
+    case a_m:
+        return 'M';
+    case a_n:
+        return 'N';
+    case a_o:
+        return 'O';
     case a_p:
         return 'P';
+    case a_q:
+        return 'Q';
+    case a_r:
+        return 'R';
+    case a_s:
+        return 'S';
+    case a_t:
+        return 'T';
+    case a_u:
+        return 'U';
+    case a_v:
+        return 'V';
+    case a_w:
+        return 'W';
+    case a_x:
+        return 'X';
+    case a_y:
+        return 'Y';
+    case a_z:
+        return 'Z';
+
+    // Numbers
+    case a_0:
+        return '0';
+    case a_1:
+        return '1';
+    case a_2:
+        return '2';
+    case a_3:
+        return '3';
+    case a_4:
+        return '4';
+    case a_5:
+        return '5';
+    case a_6:
+        return '6';
+    case a_7:
+        return '7';
+    case a_8:
+        return '8';
+    case a_9:
+        return '9';
+
+    // Punctuation/special character keys (partial support; map to virtual key codes as appropriate)
     case a_space:
         return VK_SPACE;
+    case a_enter:
+        return VK_RETURN;
+    case a_tab:
+        return VK_TAB;
     case a_esc:
         return VK_ESCAPE;
+    case a_backspace:
+        return VK_BACK;
+    case a_shift:
+        return VK_SHIFT;
+    case a_ctrl:
+        return VK_CONTROL;
+    case a_alt:
+        return VK_MENU;
+    case a_capslock:
+        return VK_CAPITAL;
+
     default:
         return 0;
     }
 }
+
 #endif
 
 /* =========================================================================
@@ -147,17 +233,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int arcade_init(int window_width, int window_height, const char *window_title, uint32_t bg_color)
 {
 #ifdef _WIN32
+    /* Set up Windows-specific window class for the game window */
     WNDCLASS wc = {0};
-    wc.lpfnWndProc = WndProc;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = "ArcadeWindow";
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.lpfnWndProc = WndProc;                      /* Assign window procedure for event handling */
+    wc.hInstance = GetModuleHandle(NULL);          /* Get current application instance */
+    wc.lpszClassName = "ArcadeWindow";             /* Name of the window class */
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);      /* Use standard arrow cursor */
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); /* Default window background */
     RegisterClass(&wc);
 
+    /* Create a non-resizable window with specified dimensions */
     DWORD style = WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME;
     RECT rect = {0, 0, window_width, window_height};
-    AdjustWindowRect(&rect, style, FALSE);
+    AdjustWindowRect(&rect, style, FALSE); /* Adjust window size to account for borders */
     state.hwnd = CreateWindow("ArcadeWindow", window_title, style,
                               CW_USEDEFAULT, CW_USEDEFAULT,
                               rect.right - rect.left, rect.bottom - rect.top,
@@ -165,10 +253,10 @@ int arcade_init(int window_width, int window_height, const char *window_title, u
     if (!state.hwnd)
     {
         fprintf(stderr, "Cannot create window\n");
-        return 1;
+        return 1; /* Return error code on failure */
     }
-    ShowWindow(state.hwnd, SW_SHOW);
-    UpdateWindow(state.hwnd);
+    ShowWindow(state.hwnd, SW_SHOW); /* Display the window */
+    UpdateWindow(state.hwnd);        /* Force initial window update */
 
     state.hdc = GetDC(state.hwnd);
     state.width = window_width;
@@ -387,6 +475,88 @@ void arcade_sleep(unsigned int milliseconds)
 #else
     usleep(milliseconds * 1000); /* Convert ms to microseconds */
 #endif
+}
+
+float arcade_delta_time(void)
+{
+    static double last_time = 0.0; /* Store time of the last frame */
+    double current_time = 0.0;     /* Current frame time */
+    float delta_time;
+
+#ifdef _WIN32
+    /* Use high-resolution performance counter for precise timing on Windows */
+    LARGE_INTEGER frequency, counter;
+    QueryPerformanceFrequency(&frequency); /* Get ticks per second */
+    QueryPerformanceCounter(&counter);     /* Get current tick count */
+    current_time = (double)counter.QuadPart / frequency.QuadPart;
+#else
+    struct timespec ts;
+    int clock_result = -1;
+#ifdef CLOCK_MONOTONIC
+    /* Prefer CLOCK_MONOTONIC for consistent timing (not affected by system clock changes) */
+    clock_result = clock_gettime(CLOCK_MONOTONIC, &ts);
+    if (clock_result == 0)
+    {
+        current_time = (double)ts.tv_sec + (double)ts.tv_nsec / 1e9;
+    }
+#else
+#ifdef CLOCK_REALTIME
+    /* Fallback to CLOCK_REALTIME (less reliable due to system clock adjustments) */
+    clock_result = clock_gettime(CLOCK_REALTIME, &ts);
+    if (clock_result == 0)
+    {
+        current_time = (double)ts.tv_sec + (double)ts.tv_nsec / 1e9;
+        fprintf(stderr, "Warning: Using CLOCK_REALTIME (less reliable for timing)\n");
+    }
+#else
+    /* Fallback to gettimeofday if no POSIX clocks are available */
+    fprintf(stderr, "Warning: No POSIX clocks available, falling back to gettimeofday\n");
+    struct timeval tv;
+    if (gettimeofday(&tv, NULL) == 0)
+    {
+        current_time = (double)tv.tv_sec + (double)tv.tv_usec / 1e6;
+    }
+    else
+    {
+        fprintf(stderr, "Error: gettimeofday failed\n");
+        current_time = 0.0;
+    }
+#endif
+#endif
+    if (clock_result != 0 && current_time == 0.0)
+    {
+        fprintf(stderr, "Warning: clock_gettime failed, falling back to gettimeofday\n");
+        struct timeval tv;
+        if (gettimeofday(&tv, NULL) == 0)
+        {
+            current_time = (double)tv.tv_sec + (double)tv.tv_usec / 1e6;
+        }
+        else
+        {
+            fprintf(stderr, "Error: gettimeofday failed\n");
+            current_time = 0.0;
+        }
+    }
+#endif
+
+    /* If first call or invalid time, initialize last_time and return 0 */
+    if (last_time == 0.0 || current_time == 0.0)
+    {
+        last_time = current_time;
+        return 0.0f;
+    }
+
+    /* Calculate delta time and update last_time */
+    delta_time = (float)(current_time - last_time);
+    last_time = current_time;
+
+    /* Clamp delta_time to avoid large jumps (e.g., during lag) */
+    if (delta_time > 0.1f)
+        delta_time = 0.1f;
+    if (delta_time < 0.0f)
+        delta_time = 0.0f;
+
+    return delta_time;
 }
 
 /* =========================================================================
@@ -649,15 +819,16 @@ static void draw_sprite(ArcadeAnySprite *sprite, int type)
         int x_end = x_start + (int)s->width;
         int y_end = y_start + (int)s->height;
         unsigned int color = s->color;
+        /* Draw a solid rectangle for color-based sprites */
         for (int y = y_start; y < y_end && y < state.height; y++)
         {
             if (y < 0)
-                continue;
+                continue; /* Skip pixels outside the top of the window */
             for (int x = x_start; x < x_end && x < state.width; x++)
             {
                 if (x < 0)
-                    continue;
-                state.pixels[y * state.width + x] = color;
+                    continue;                              /* Skip pixels outside the left of the window */
+                state.pixels[y * state.width + x] = color; /* Set pixel to sprite color */
             }
         }
     }
@@ -670,18 +841,19 @@ static void draw_sprite(ArcadeAnySprite *sprite, int type)
         int y_end = y_start + (int)s->height;
         int iw = s->image_width;
         int ih = s->image_height;
+        /* Draw image-based sprite with alpha blending */
         for (int y = y_start, sy = 0; y < y_end && y < state.height && sy < ih; y++, sy++)
         {
             if (y < 0)
-                continue;
+                continue; /* Skip pixels outside the top of the window */
             for (int x = x_start, sx = 0; x < x_end && x < state.width && sx < iw; x++, sx++)
             {
                 if (x < 0)
-                    continue;
+                    continue; /* Skip pixels outside the left of the window */
                 uint32_t pixel = s->pixels[sy * iw + sx];
-                if ((pixel >> 24) > 0)
+                if ((pixel >> 24) > 0) /* Only draw if pixel is not fully transparent */
                 {
-                    state.pixels[y * state.width + x] = pixel;
+                    state.pixels[y * state.width + x] = pixel; /* Copy pixel to buffer */
                 }
             }
         }
@@ -821,11 +993,24 @@ void arcade_free_group(SpriteGroup *group)
 int arcade_play_sound(const char *audio_file_path)
 {
 #ifdef _WIN32
+    /* Play WAV file asynchronously using Windows API */
     return PlaySound(audio_file_path, NULL, SND_FILENAME | SND_ASYNC) ? 0 : 1;
 #else
+    /* Use aplay to play WAV file in the background on Linux */
     char command[256];
-    snprintf(command, sizeof(command), "aplay -q %s &", audio_file_path);
-    return system(command);
+    snprintf(command, sizeof(command), "aplay -q %s &", audio_file_path); /* Quiet playback in background */
+    return system(command);                                               /* Execute system command and return status */
+#endif
+}
+
+int arcade_stop_sound(void)
+{
+#ifdef _WIN32
+    /* Stop any currently playing sound using Windows API */
+    return PlaySound(NULL, NULL, 0) ? 0 : 1;
+#else
+    /* Terminate all background aplay processes on Linux */
+    return system("pkill -f 'aplay -q' > /dev/null 2>&1"); /* Kill aplay processes silently */
 #endif
 }
 
@@ -1073,3 +1258,5 @@ char *arcade_rotate_image(const char *input_path, int degrees)
     return result;
 #endif
 }
+
+#endif /* ARCADE_IMPLEMENTATION */
