@@ -5,7 +5,7 @@
 
 ARCADE (Awesome Rendering Control And Dynamics Engine) is a lightweight, single-header C library for creating retro 2D games. Runs on Windows (Win32) and Linux (X11).
 
-Visit the [ARCADE website]([https://arcade-lib.dev](http://arcade-lib.vercel.app/)) for examples, tutorials, and documentation.
+Visit the [ARCADE website](http://arcade-lib.vercel.app/) for examples, tutorials, and documentation.
 
 ## Features
 
